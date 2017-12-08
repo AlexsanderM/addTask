@@ -10,6 +10,17 @@ namespace addTask
 {
     class Program
     {
+        static String addTask(String[] array) {
+            String task = "";
+
+            for (int i = 1; i < array.Length; i++)
+            {
+                task = task + array[i] + " ";
+            }
+
+            return task;
+        }
+
         static void Main(string[] args)
         {
             int update_id = 0;
@@ -18,13 +29,20 @@ namespace addTask
             int id_user;
             string id_chat= "";
             string text_user = "";
+            string fileExel = "D:\\Sasha\\MyFile.xls";
 
+            int day;
+            int month;
+            int house; 
+            int minutes;
 
             string urlBot = "https://api.telegram.org/bot";
             string token = "487607339:AAHr8V9HG_SznrwE_3eRbGnkpKSfVCNKj1s";
 
             WebClient webClient = new WebClient();
-                        
+
+            Application exApp = new Application();
+
             while (true)
             {
                 String url = $"{urlBot}{token}/getUpdates?offset={update_id + 1}";
@@ -42,42 +60,46 @@ namespace addTask
                     id_chat = Convert.ToString(info["message"]["chat"]["id"]);
                     date = Convert.ToInt32(info["message"]["date"]);
                     text_user = Convert.ToString(info["message"]["text"]);
+                    
+                    DateTime dateNow = (new DateTime(1970, 1, 1, 0, 0, 0, 0)).AddSeconds(date);
+                    Console.WriteLine(dateNow);
 
-                    Console.WriteLine(message_id);
-                    Console.WriteLine(update_id);
-                    Console.WriteLine(id_user);
-                    Console.WriteLine(id_chat);
-                    Console.WriteLine(date);
-                    Console.WriteLine(text_user);
+                    day = dateNow.Day;
+                    month = dateNow.Month;
+                    house = dateNow.TimeOfDay.Hours;
+                    minutes = dateNow.TimeOfDay.Minutes;
 
-                    DateTime pDate = (new DateTime(1970, 1, 1, 0, 0, 0, 0)).AddSeconds(date);
-                    Console.WriteLine(pDate);
+                    Console.WriteLine($"{day}.{month}");
+                    Console.WriteLine($"{house}:{minutes}");
 
                     try
                     {
                         if ( id_user == 130116992) {
-                            messegeSendText = Console.ReadLine();
+                            //messegeSendText = Console.ReadLine();
+                            int rowsExel;
 
-                            String[] arrayWordTask = text_user.Split(' ');
-                            Console.WriteLine(arrayWordTask[0] + arrayWordTask[1]);
+                            String[] arrayWordTask = text_user.Split(' ');                                                
 
-                            Microsoft.Office.Interop.Excel.Application exApp = new Microsoft.Office.Interop.Excel.Application();
-                            exApp.Visible = true;
-                            exApp.Workbooks.Add();
-                            Worksheet workSheet = (Worksheet)exApp.ActiveSheet;
-                            workSheet.Cells[1, 1] = "ID";
-                            workSheet.Cells[1, 2] = "Name";
-                            workSheet.Cells[1, 3] = "Age";
-                            int rowExcel = 2;
-                            //for (int i = 0; i < dataGridView1.Rows.Count; i++)                            
-                                workSheet.Cells[rowExcel, "A"] = pDate;
-                           
-                            workSheet.SaveAs("D:\\Sasha\\MyFile.xls");
-                            exApp.Quit();
+                            Workbook workbook = exApp.Workbooks.Open(fileExel);
+                            Worksheet workSheet = (Worksheet)workbook.ActiveSheet;
 
+                            rowsExel = workSheet.UsedRange.Rows.Count;   // check rows in Exel
 
-                            url = $"{urlBot}{token}/sendMessage?chat_id={id_chat}&text={messegeSendText}";
-                            webClient.DownloadString(url);
+                            exApp.Visible = false;
+                            
+                            workSheet.Cells[1, 1] = "Дата";
+                            workSheet.Cells[1, 2] = "Время";
+                            workSheet.Cells[1, 3] = "Кабинет";
+                            workSheet.Cells[1, 4] = "Задача";
+                                                                             
+                            workSheet.Cells[rowsExel + 1, "A"] = $"{day}.{month}";
+                            workSheet.Cells[rowsExel + 1, "B"] = $"{house}:{minutes}";
+                            workSheet.Cells[rowsExel + 1, "C"] = arrayWordTask[0];
+                            workSheet.Cells[rowsExel + 1, "D"] = addTask(arrayWordTask);
+
+                            exApp.DisplayAlerts = false;
+                            workbook.SaveAs(fileExel);
+                            exApp.Quit();                            
                         }
                         else
                         {
